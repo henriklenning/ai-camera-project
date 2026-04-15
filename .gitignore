@@ -1,0 +1,16 @@
+# Models
+yolo26n.pt
+yolo26n_ncnn_model/
+
+# Sample/Test Data
+bus.jpg
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+dist/
+build/
+*.egg-info/
