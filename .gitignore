@@ -15,3 +15,10 @@ dist/
 build/
 *.egg-info/
 .vscode/
+outputs/
+*_results.json
+*.jpg
+*.mp4
+*.avi
+*.mov
+*.mkv
