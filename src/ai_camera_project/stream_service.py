@@ -112,17 +112,10 @@ class StreamService:
     def _capture_single_frame(self):
         """Capture a single frame"""
         try:
-            if self.detector:
-                # If we have a detector, capture as array, annotate, then encode to jpeg
-                frame = self.picam2.capture_array()
-                annotated_frame = self.detector.annotate_frame(frame)
-                _, jpeg_data = cv2.imencode('.jpg', annotated_frame)
-                self.frame_buffer = jpeg_data.tobytes()
-            else:
-                self.buffer.seek(0)
-                self.buffer.truncate()
-                self.picam2.capture_file(self.buffer, format='jpeg')
-                self.frame_buffer = self.buffer.getvalue()
+            self.buffer.seek(0)
+            self.buffer.truncate()
+            self.picam2.capture_file(self.buffer, format='jpeg')
+            self.frame_buffer = self.buffer.getvalue()
             return True
         except Exception as e:
             logging.error(f"Error capturing initial frame: {str(e)}")
