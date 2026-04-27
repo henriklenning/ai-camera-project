@@ -1,13 +1,9 @@
 import os
-import json
-import cv2
-from typing import Iterable, List, Dict
-import sys
 
 # Custom modules
 from ai_camera_project.detector import BaseDetector, CameraDetector, ImageDetector, VideoDetector
 from ai_camera_project.stream_service import StreamService
-from ai_camera_project.web_server import WebServer
+from ai_camera_project.web_server import start
 
 
 def main():
@@ -30,8 +26,7 @@ def main():
         ).start()
     
         if stream:
-            server = WebServer(stream)
-            server.run()
+            start(stream)
         else:
             print("Error: Could not start camera stream")
         return
