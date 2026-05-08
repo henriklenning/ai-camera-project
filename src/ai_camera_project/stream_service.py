@@ -19,7 +19,7 @@ class StreamService:
         self.framerate = framerate
         self.detector = detector
         
-        # Get the camera index using our utility function
+        # Get the camera index using the utility function
         camera_index = 0
         logging.info(f"Using camera at index {camera_index}")
         self.picam2 = Picamera2(camera_index)
@@ -138,7 +138,6 @@ class StreamService:
             try:
                 start_time = time()
 
-                # Only capture if we have clients or no frame
                 if self.detector:
                     # Capture as array for processing
                     frame = self.picam2.capture_array()

@@ -37,25 +37,8 @@ def _generate_frames():
         # Use the framerate from the stream instance to pace the generator
         sleep(1/stream_instance.framerate)
 
-def start(stream, port=8080, host='0.0.0.0'):
+def start_webserver(stream: any, port: int=8080, host: str='0.0.0.0'):
     global stream_instance
     stream_instance = stream
     logging.info(f"Starting web server on {host}:{port}")
     app.run(host=host, port=port, threaded=True, use_reloader=False)
-
-if __name__ == '__main__':
-    # This block allows you to still test this file directly if needed
-    from ai_camera_project.stream_service import StreamService
-    
-    stream = StreamService(
-        width=1280,
-        height=720,
-        framerate=30,
-        format="BGR888",
-        brightness=0.0,
-        contrast=0.03125,
-        saturation=0.03125
-    ).start()
-    
-    start(stream)
-

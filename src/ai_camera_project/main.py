@@ -3,7 +3,7 @@ import os
 # Custom modules
 from ai_camera_project.detector import BaseDetector, CameraDetector, ImageDetector, VideoDetector
 from ai_camera_project.stream_service import StreamService
-from ai_camera_project.web_server import start
+from ai_camera_project.web_server import start_webserver
 
 
 def main():
@@ -26,7 +26,7 @@ def main():
         ).start()
     
         if stream:
-            start(stream)
+            start_webserver(stream)
         else:
             print("Error: Could not start camera stream")
         return

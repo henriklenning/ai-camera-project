@@ -1,14 +1,6 @@
-import cv2
-from picamera2 import Picamera2
 from ultralytics import YOLO
-from picamera2_webstream import create_app
-from ai_camera_project.stream_service import StreamService
-import os
-import shutil
 import json
-import cv2
 from typing import Iterable, List, Dict
-import sys
 
 class BaseDetector:
     """
