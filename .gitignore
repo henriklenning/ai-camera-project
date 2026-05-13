@@ -1,5 +1,6 @@
 # Models
 yolo26n.pt
+yolov8n-pose.pt
 yolo26n_ncnn_model/
 
 # Sample/Test Data
