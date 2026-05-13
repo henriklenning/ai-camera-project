@@ -1,7 +1,7 @@
 import os
 
 # Custom modules
-from ai_camera_project.detector import BaseDetector, CameraDetector, ImageDetector, VideoDetector
+from ai_camera_project.detector import BaseDetector, CameraDetector, ImageDetector, VideoDetector, PoseDetector
 from ai_camera_project.stream_service import StreamService
 from ai_camera_project.web_server import start_webserver
 
@@ -12,16 +12,16 @@ def main():
 
     if path_lower == 'camera':
         print("Starting live camera feed with detection...")
-        detector = CameraDetector()
+        detector = PoseDetector()
         
         stream = StreamService(
             width=1280,
             height=720,
             framerate=30,
-            format="BGR888",
+            format="RGB888",
             brightness=0.0,
-            contrast=0.03125,
-            saturation=0.03125,
+            contrast=1.0,
+            saturation=1.0,
             detector=detector
         ).start()
     

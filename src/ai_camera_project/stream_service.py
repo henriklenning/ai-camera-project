@@ -9,7 +9,7 @@ from time import sleep, time
 from libcamera import Transform
 
 class StreamService:
-    def __init__(self, width=1280, height=720, framerate=30, format="MJPEG",
+    def __init__(self, width=1280, height=720, framerate=30, format="RGB888",
                  brightness=0.0, contrast=1.0, saturation=1.0, detector=None):
         self.resolution = (width, height)
         self.lock = threading.Lock()
@@ -25,9 +25,10 @@ class StreamService:
         self.picam2 = Picamera2(camera_index)
         
         try:
-            # Simple configuration without problematic controls
+            # Use RGB888 as it's more standard for capture_array
+            # We will convert to BGR for OpenCV processing
             config = self.picam2.create_video_configuration(
-                main={"size": self.resolution, "format": format},
+                main={"size": self.resolution, "format": "RGB888"},
                 buffer_count=4,
                 transform=Transform(vflip=1, hflip=1)
             )
@@ -46,36 +47,33 @@ class StreamService:
             
     def set_camera_properties(self, brightness, contrast, saturation):
         """
-        Set camera properties safely using v4l2 controls if available
+        Set camera properties safely using libcamera controls
         """
         try:
-            # Scale the normalized values to the camera's range
-            # These are set through libcamera metadata
             controls = {}
 
-            # Most v4l2 cameras support these controls but with different ranges
-            # We use a try/except block for each control to handle unsupported ones
+            # Explicitly set AWB to Auto (0 usually means Auto in libcamera)
+            controls["AwbEnable"] = True
+            controls["AwbMode"] = 0 
+
+            # Brightness: Range is typically -1.0 to 1.0, default 0.0
             try:
-                # Brightness: Map 0.0 to midpoint of range (-1.0 to 1.0 -> -64 to 64)
-                brightness_value = int(brightness * 64)
-                logging.info(f"Setting brightness to {brightness_value}")
-                controls["Brightness"] = brightness_value
+                logging.info(f"Setting brightness to {brightness}")
+                controls["Brightness"] = float(brightness)
             except Exception as e:
                 logging.warning(f"Could not set brightness: {e}")
                 
+            # Contrast: Range is typically 0.0 to 32.0, default 1.0
             try:
-                # Contrast: Map normalized to camera range (0.0 to 2.0 -> 0 to 64)
-                contrast_value = int(contrast * 32)
-                logging.info(f"Setting contrast to {contrast_value}")
-                controls["Contrast"] = contrast_value
+                logging.info(f"Setting contrast to {contrast}")
+                controls["Contrast"] = float(contrast)
             except Exception as e:
                 logging.warning(f"Could not set contrast: {e}")
                 
+            # Saturation: Range is typically 0.0 to 32.0, default 1.0
             try:
-                # Saturation: Map normalized to camera range (0.0 to 2.0 -> 0 to 128)
-                saturation_value = int(saturation * 64)
-                logging.info(f"Setting saturation to {saturation_value}")
-                controls["Saturation"] = saturation_value
+                logging.info(f"Setting saturation to {saturation}")
+                controls["Saturation"] = float(saturation)
             except Exception as e:
                 logging.warning(f"Could not set saturation: {e}")
                 
@@ -91,6 +89,10 @@ class StreamService:
         """Start the video streaming thread"""
         try:
             self.picam2.start()
+            # Wait for AWB and AGC to settle
+            logging.info("Waiting for camera to settle (AWB/AGC)...")
+            sleep(2.0)
+            
             success = self._capture_single_frame()
             
             if not success:
@@ -110,6 +112,7 @@ class StreamService:
     def _capture_single_frame(self):
         """Capture a single frame"""
         try:
+            # For the initial frame, we can just use capture_file (JPEG)
             self.buffer.seek(0)
             self.buffer.truncate()
             self.picam2.capture_file(self.buffer, format='jpeg')
@@ -139,12 +142,13 @@ class StreamService:
                 start_time = time()
 
                 if self.detector:
-                    # Capture as array for processing
+                    # Capture as array (RGB888 configuration gives BGR array)
                     frame = self.picam2.capture_array()
+                    
                     # Process and annotate
                     annotated_frame = self.detector.annotate_frame(frame)
+                    
                     # Encode back to JPEG for the web stream
-                    # Note: YOLO.plot returns BGR, cv2.imencode expects BGR
                     _, jpeg_encoded = cv2.imencode('.jpg', annotated_frame)
                     jpeg_data = jpeg_encoded.tobytes()
                 else:

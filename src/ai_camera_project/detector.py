@@ -6,8 +6,8 @@ class BaseDetector:
     """
     Base class for object detection using YOLO models.
     """
-    def __init__(self, model_path: str = "yolo26n_ncnn_model") -> None:
-        self.model = YOLO(model_path, task='detect')
+    def __init__(self, model_path: str = "yolo26n_ncnn_model", task: str = "detect") -> None:
+        self.model = YOLO(model_path, task=task)
 
     def process_results(self, results: Iterable) -> List[Dict]:
         """
@@ -15,13 +15,24 @@ class BaseDetector:
         """
         detections = []
         for r in results:
-            for box in r.boxes:
-                detections.append({
-                    "box": box.xyxy[0].tolist(),
-                    "confidence": float(box.conf[0]),
+            # Check if results have keypoints (pose estimation)
+            has_pose = hasattr(r, 'keypoints') and r.keypoints is not None
+            
+            for i, box in enumerate(r.boxes):
+                det = {
+                    "box": box.xyxy[0].tolist(), 
+                    "confidence": float(box.conf[0]), 
                     "class_id": int(box.cls[0]),
                     "class_name": r.names[int(box.cls[0])]
-                })
+                }
+                
+                if has_pose:
+                    # Extract keypoints for this specific detection
+                    det["keypoints"] = r.keypoints.xy[i].tolist()
+                    if r.keypoints.conf is not None:
+                        det["keypoint_confidence"] = r.keypoints.conf[i].tolist()
+                
+                detections.append(det)
         return detections
 
     def annotate_frame(self, frame):
@@ -42,7 +53,6 @@ class BaseDetector:
         print(f"Results saved to JSON: {output_file}")
 
 class CameraDetector(BaseDetector):
-    
     """
     Handles object detection for live camera streams.
     """
@@ -75,4 +85,11 @@ class ImageDetector(BaseDetector):
     """
     def detect(self, image_path: str, conf: float = 0.25) -> Iterable:
         return self.model(image_path, conf=conf)
-    
+
+class PoseDetector(CameraDetector):
+    """
+    Specialized detector for pose estimation.
+    """
+    def __init__(self, model_path: str = "yolov8n-pose.pt") -> None:
+        # Pass task='pose' to BaseDetector to correctly load the model architecture
+        super().__init__(model_path, task='pose')
